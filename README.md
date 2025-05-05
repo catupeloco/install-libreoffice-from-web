@@ -10,3 +10,6 @@ The goal of this script is to provide some level of automation for updates becau
 The script detects the system language, local and remote versions, and gives you the option to remove and reinstall LibreOffice.
 
 It installs the base, language, and help packages directly from [libreoffice.org](https://www.libreoffice.org).
+
+<img title="Salida" src="Salida.png">
+
