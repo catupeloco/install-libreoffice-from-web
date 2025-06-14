@@ -5,6 +5,10 @@ CACHE_FOLDER=/tmp
 DOWNLOAD_DIR=${CACHE_FOLDER}/Libreoffice
 LIBREOFFICE_URL="https://download.documentfoundation.org/libreoffice/stable/"
 VERSION=$(wget -qO- $LIBREOFFICE_URL | grep -oP '[0-9]+(\.[0-9]+)+' | sort -V | tail -1)
+if [ -z "$VERSION" ] ; then
+	echo Can\'t connect to documentfoundation.org, aborting
+	exit 22
+fi
 VERSION_INSTALLED=$(/usr/local/bin/libreoffice* --version 2>/dev/null | awk '{print $2}' )
 
 #sudo find $DOWNLOAD_DIR -type f -name "*.tar.gz" -exec rm {} \; >/dev/null 2>&1
