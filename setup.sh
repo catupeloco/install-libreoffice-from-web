@@ -70,9 +70,7 @@ fi
 export LC_ALL=C LANGUAGE=C LANG=C
 
 # Verificar si LibreOffice está instalado
-dpkg -l | grep libreoffice &> /dev/null
-
-if [ $? -eq 0 ]; then
+if dpkg -l | grep -q libreoffice ; then
     echo "$MSG_INSTALLED"
     dpkg -l | grep libreoffice
     echo $VERSION_INSTALLED | grep $VERSION >/dev/null
@@ -99,12 +97,36 @@ else
 fi
 
 echo "$MSG_DOWNLOADING"
-        sudo mkdir -p $DOWNLOAD_DIR >/dev/null 2>&1
-        sudo wget --show-progress -qN ${LIBREOFFICE_URL}${VERSION}/deb/x86_64/LibreOffice_${VERSION}_Linux_x86-64_deb.tar.gz -P $DOWNLOAD_DIR
-        if [ ! -z "$LO_LANG" ] ; then
-                sudo wget --show-progress -qN ${LIBREOFFICE_URL}${VERSION}/deb/x86_64/LibreOffice_${VERSION}_Linux_x86-64_deb_langpack_$LO_LANG.tar.gz -P $DOWNLOAD_DIR
-                sudo wget --show-progress -qN ${LIBREOFFICE_URL}${VERSION}/deb/x86_64/LibreOffice_${VERSION}_Linux_x86-64_deb_helppack_$LO_LANG.tar.gz -P $DOWNLOAD_DIR
-        fi
+sudo apt install aria2 -y &>/dev/null
+mkdir -p $DOWNLOAD_DIR >/dev/null 2>&1
+
+cat << EOF > /tmp/downloads.list
+${LIBREOFFICE_URL}${VERSION}/deb/x86_64/LibreOffice_${VERSION}_Linux_x86-64_deb.tar.gz
+  dir=${DOWNLOAD_DIR}
+  out=LibreOffice_${VERSION}_Linux_x86-64_deb.tar.gz
+EOF
+
+if [ ! -z "$LO_LANG" ] ; then
+cat << EOF >> /tmp/downloads.list
+${LIBREOFFICE_URL}${VERSION}/deb/x86_64/LibreOffice_${VERSION}_Linux_x86-64_deb_langpack_$LO_LANG.tar.gz
+  dir=${DOWNLOAD_DIR}
+  out=LibreOffice_${VERSION}_Linux_x86-64_deb_langpack_$LO_LANG.tar.gz
+${LIBREOFFICE_URL}${VERSION}/deb/x86_64/LibreOffice_${VERSION}_Linux_x86-64_deb_helppack_$LO_LANG.tar.gz 
+  dir=${DOWNLOAD_DIR}
+  out=LibreOffice_${VERSION}_Linux_x86-64_deb_helppack_$LO_LANG.tar.gz 
+EOF
+fi
+time aria2c \
+-i /tmp/downloads.list \
+-j 5 \
+-x 4 \
+-c \
+--allow-overwrite=true \
+--auto-file-renaming=false \
+--truncate-console-readout=true \
+--console-log-level=warn \
+--download-result=hide \
+--summary-interval=0
 
 echo "$MSG_UNCOMPRESSING"
         sudo tar -xzf $DOWNLOAD_DIR/LibreOffice_${VERSION}_Linux_x86-64_deb.tar.gz -C $DOWNLOAD_DIR
@@ -114,7 +136,7 @@ echo "$MSG_UNCOMPRESSING"
         fi
 
 echo "$MSG_INSTALLING"
-        sudo dpkg -i $(find $DOWNLOAD_DIR/ -type f -name \*.deb) >/dev/null 2>&1
+        time sudo dpkg -i $(find $DOWNLOAD_DIR/ -type f -name \*.deb) >/dev/null 2>&1
         sudo apt install --fix-broken -y >/dev/null 2>&1
 
 echo "$MSG_DONE"
